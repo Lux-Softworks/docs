@@ -5,7 +5,12 @@ import { source } from "@/lib/source";
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (
-    <RootProvider>
+    <RootProvider
+      theme={{
+        defaultTheme: "dark",
+        enableSystem: true,
+      }}
+    >
       <DocsLayout
         tree={source.pageTree}
         nav={{

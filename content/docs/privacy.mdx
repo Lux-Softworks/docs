@@ -1,0 +1,29 @@
+---
+title: Privacy
+description: What leaves the phone and what does not.
+---
+
+Lumen holds a single boundary: the phone. Everything you read, every summary generated from it, every embedding computed from it, and every answer written about it lives inside the app&rsquo;s sandboxed container. None of it is uploaded, synced, or backed up to us.
+
+## The one exception
+
+On first launch, Lumen fetches the language model weights from Hugging Face. That is the only network request Lumen makes on your behalf for a core feature. After the fetch completes, the model runs offline forever.
+
+## What we have on our side
+
+Nothing. There is no server to breach, no log to subpoena, no user record to lose. The flip side is that **you** are the custodian. Losing the device or reinstalling the app resets the library.
+
+## Scrubbing
+
+Every site you visit is filtered through the `ThreatDetector` module, which classifies and blocks known trackers, fingerprinting scripts, and ad networks. The counter at the bottom of the site menu reports exact numbers per domain.
+
+Blocking is best-effort. If a site collects data through first-party forms you submit to it directly, Lumen cannot prevent that. What it can prevent is the ambient third-party instrumentation that follows you around the web, and it does.
+
+## Controls you have
+
+- `Collect Knowledge` toggle per site, from the site menu.
+- `Clear Browsing Data` from the Browser Settings screen. Destructive, cannot be undone.
+- `Clear History on Close` switch if you want a shorter memory by default.
+- Delete the app. iOS removes the sandbox and Lumen has no state left anywhere.
+
+For the full legal statement, see the [Privacy Policy](/privacy).

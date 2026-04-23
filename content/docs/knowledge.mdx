@@ -1,0 +1,48 @@
+---
+title: Knowledge panel
+description: The two modes at the core of Lumen — Ask and Library.
+---
+
+The knowledge panel lives at the bottom of the browser. Pull it up and you get two modes: **Ask** and **Library**. Both run fully on-device.
+
+## Ask
+
+You type a question, semantic search pulls the most relevant passages from your reading, and the local model answers with citations. Because the model is small and the context is yours, responses lean conservative. When a question cannot be grounded in pages you have actually read, Lumen says so.
+
+```text
+You
+  what did I read about closures?
+
+Lumen  · Well grounded in sources
+  Closures are functions that keep a reference
+  to variables from the scope they were defined
+  in. Three pages in your library cover this:
+
+  · emilkowal.ski · Building libraries
+  · overreacted.io · useEffect
+  · mdn.io · Closures
+```
+
+Every answer carries a grounding label:
+
+- `Well grounded in sources` — retrieval found multiple relevant pages.
+- `Partially grounded` — retrieval found something, but thin.
+- `Not grounded` — the model answered without any of your reading to draw on.
+
+Grounding is computed from the retrieval step, not from the model. If semantic search returned nothing, the response is marked ungrounded regardless of how confident the prose sounds.
+
+## Library
+
+The Library view organizes your reading into colored topic folders: Art, Climate, Design, Film &amp; TV, Science, and so on. Classification happens in the background while you browse. You can drill into a topic to see its sites, then into a site to see individual pages with generated summaries.
+
+The layers read like a nested table of contents:
+
+```
+Topics  →  Sites  →  Pages
+```
+
+Each layer has its own LLM-written summary that updates as new pages arrive.
+
+## Citations
+
+Tapping a citation opens the page at the passage Lumen quoted. If the original URL has moved or is gone, Lumen shows the cached text with a warning so you can still see what the model relied on.

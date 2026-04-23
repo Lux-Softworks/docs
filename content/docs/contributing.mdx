@@ -1,0 +1,44 @@
+---
+title: Contributing
+description: How to build Lumen from source and where to send your changes.
+---
+
+Lumen is AGPL-3.0 and the project lives at [github.com/Lux-Softworks/Lumen](https://github.com/Lux-Softworks/Lumen). Open an issue before investing time on a large change so we can align on direction. Smaller fixes and improvements can go straight to a pull request.
+
+## Build from source
+
+You need a Mac with Xcode 26.2 or newer, an Apple Developer account for signing, and an iOS 18 target device or simulator.
+
+```bash
+git clone https://github.com/Lux-Softworks/Lumen.git
+cd Lumen
+open Lumen.xcworkspace
+
+# In Xcode:
+#  - Select the Lumen scheme
+#  - Pick your signing team
+#  - Cmd-R to run on device or simulator
+```
+
+<Callout type="info">
+  The first build pulls MLX Swift through Swift Package Manager and runs longer
+  than subsequent builds. Budget about five minutes on a first clone.
+</Callout>
+
+## What we welcome
+
+- Bug fixes with a reproducer.
+- Accessibility improvements.
+- New readers, site-specific extractors, or parser enhancements.
+- Privacy hardening that does not add complexity.
+- Docs edits — every page on this site is a markdown file you can edit.
+
+## What we are careful about
+
+- Features that would require a backend. We do not run one.
+- Third-party SDKs, analytics, or telemetry. None allowed.
+- Design changes that break the calm. Lumen is deliberately quiet.
+
+## License reminder
+
+AGPL-3.0 means if you distribute a modified version, you must share your changes under the same license. That rule is a feature, not a friction: it keeps the project honest about staying open as it grows.

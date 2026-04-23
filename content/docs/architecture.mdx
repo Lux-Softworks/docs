@@ -1,0 +1,55 @@
+---
+title: Architecture
+description: The shape of Lumen — MLX, WKWebView, SQLite, and a single sandbox.
+---
+
+Lumen is a single Swift app with three main layers: the browser engine, the on-device model, and the local knowledge store. Each layer is either Apple-native or a thin wrapper around something Apple ships.
+
+## Layers
+
+| Layer           | Stack                                                   |
+| --------------- | ------------------------------------------------------- |
+| UI              | SwiftUI, iOS 18+                                        |
+| Browser engine  | `WKWebView`                                             |
+| AI inference    | `MLX Swift` running Llama 3.2 1B 4-bit                  |
+| Semantic search | Apple `NLEmbedding` + FTS5 keyword ranking              |
+| Storage         | SQLite with the FTS5 virtual table                      |
+| Privacy filter  | `ThreatDetector` (tracker + fingerprint classification) |
+
+## On-device AI
+
+The model is a 4-bit quantized build of Meta&rsquo;s Llama 3.2 1B Instruct, run through [MLX Swift](https://github.com/ml-explore/mlx-swift) on the Neural Engine and GPU. At this size, the model fits comfortably on modern iPhones and returns short, cited answers in a few hundred milliseconds.
+
+Sentence embeddings come from Apple&rsquo;s `NLEmbedding`. Semantic search combines cosine similarity over those embeddings with FTS5 keyword ranking, then feeds the top passages into the model as context.
+
+## Storage
+
+All content lives in a single SQLite database inside the app&rsquo;s sandbox. The schema separates page bodies, sentence embeddings, topic labels, and generated summaries. An FTS5 virtual table sits on top for full-text search.
+
+```sql
+-- Rough shape of the content table
+CREATE TABLE pages (
+  id       TEXT PRIMARY KEY,
+  url      TEXT NOT NULL,
+  title    TEXT,
+  body     TEXT,
+  topic    TEXT,
+  read_at  INTEGER
+);
+
+CREATE VIRTUAL TABLE pages_fts
+USING fts5(title, body, content='pages');
+```
+
+The database is never exported over the network. Backups happen only through the phone&rsquo;s own encrypted iCloud backup if you have one configured, which is opaque to Lumen.
+
+## Browser engine
+
+The web view is Apple&rsquo;s `WKWebView` configured for minimal ambient leakage:
+
+- HTTPS-only upgrades on every navigation.
+- Third-party cookies blocked by default.
+- Mixed-content loads blocked.
+- Tracker and fingerprint classification through `ThreatDetector`.
+
+Lumen does not override or repaint the page DOM. What you see is what the site shipped, minus the instrumentation.

@@ -1,0 +1,36 @@
+@import "tailwindcss";
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+@source "../node_modules/fumadocs-ui/dist/**/*.js";
+
+@theme {
+  --color-ink: #141414;
+  --color-parchment: #e8e4dc;
+  --color-amber: #ff9f0a;
+
+  --color-linen: #f2f0eb;
+  --color-linen-ink: #1e1e1e;
+
+  --font-grotesk: "Inter Tight", system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+  --bg: var(--color-ink);
+  --fg: var(--color-parchment);
+}
+
+html.light {
+  color-scheme: light;
+  --bg: var(--color-linen);
+  --fg: var(--color-linen-ink);
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}

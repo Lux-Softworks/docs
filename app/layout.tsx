@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     template: "%s · Lumen Docs",
   },
   description:
-    "Documentation for Lumen — a private iOS browser with a built-in knowledge panel.",
+    "Documentation for Lumen, a private iOS browser with a built-in knowledge panel.",
   robots: { index: true, follow: true },
 };
 
@@ -36,6 +36,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             defaultTheme: "dark",
             enableSystem: true,
           }}
+          search={{
+            options: { api: "/docs/api/search" },
+          }}
         >
           <DocsLayout
             tree={source.pageTree}
@@ -45,7 +48,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   Lumen Docs
                 </span>
               ),
-              url: "/docs",
+              url: "/",
             }}
             links={[
               { text: "Home", url: "/" },

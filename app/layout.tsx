@@ -50,11 +50,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               ),
               url: "/",
             }}
-            links={[
-              { text: "Home", url: "/" },
-              { text: "Privacy", url: "/privacy" },
-              { text: "Colophon", url: "/colophon" },
-            ]}
+            links={[{ text: "Colophon", url: "/colophon" }]}
             githubUrl="https://github.com/Lux-Softworks/Lumen"
           >
             {children}

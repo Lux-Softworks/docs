@@ -1,44 +1,135 @@
 ---
 title: Contributing
-description: How to build Lumen from source and where to send your changes.
+description: How to build Lumen from source, run its tests and lint, and send a change back.
 ---
 
-Lumen is AGPL-3.0 and the project lives at [github.com/Lux-Softworks/Lumen](https://github.com/Lux-Softworks/Lumen). Open an issue before investing time on a large change so we can align on direction. Smaller fixes and improvements can go straight to a pull request.
+Lumen&rsquo;s source lives at [github.com/Lux-Softworks/Lumen](https://github.com/Lux-Softworks/Lumen), and anyone can build it, change it, and send the change back. This page covers what you need on your Mac, how to build and test, the lint rules CI enforces, and how issues and pull requests are handled.
+
+## Requirements
+
+- A Mac with Xcode 26.2 or newer.
+- An iPhone on iOS 18 or newer, or the iOS 18 Simulator. The Simulator needs an Apple Silicon Mac.
+- An Apple Developer account, which Xcode needs to sign the app for your own device.
+- A network connection the first time the app needs its language model, which it downloads from Hugging Face.
 
 ## Build from source
 
-You need a Mac with Xcode 26.2 or newer, an Apple Developer account for signing, and an iOS 18 target device or simulator.
+<Steps>
+<Step>
+
+Clone the repository and open the project. Lumen is a single Xcode project, not a workspace.
 
 ```bash
 git clone https://github.com/Lux-Softworks/Lumen.git
 cd Lumen
-open Lumen.xcworkspace
-
-# In Xcode:
-#  - Select the Lumen scheme
-#  - Pick your signing team
-#  - Cmd-R to run on device or simulator
+open Lumen.xcodeproj
 ```
 
-<Callout type="info">
-  The first build pulls MLX Swift through Swift Package Manager and runs longer
-  than subsequent builds. Budget about five minutes on a first clone.
+</Step>
+<Step>
+
+Sign the app with your own team. Signing lives in `Configuration/Signing.xcconfig` rather than in the project, and it names the original developer&rsquo;s team (`XF6K537DNY`), which your account cannot use. Copy `Configuration/Signing.local.example.xcconfig` to `Configuration/Signing.local.xcconfig`, then set `DEVELOPMENT_TEAM` to your team ID and `LUMEN_BUNDLE_ID_PREFIX` to a prefix of your own, such as `com.yourname`. Git ignores the copy, and all three targets read it; nothing in Xcode&rsquo;s **Signing & Capabilities** tab needs changing.
+
+</Step>
+<Step>
+
+Let Swift Package Manager resolve the four dependencies: `mlx-swift`, `mlx-swift-lm`, `swift-readability`, and `SwiftSoup`. Xcode starts this on its own when the project opens.
+
+</Step>
+<Step>
+
+Pick an iPhone or a simulator on iOS 18 or newer as the destination, and press **⌘R**.
+
+</Step>
+</Steps>
+
+<Callout type="warn">
+  The language model does not run on the Simulator. There, page summaries stay
+  empty and Ask replies with a fixed placeholder. Anything that touches
+  summaries or answers has to be tested on a physical iPhone.
 </Callout>
 
-## What we welcome
+An empty library is hard to work on, and so the project has a switch for it. Setting `seedKnowledge` to `true` in `Lumen/Config/KnowledgeSeeding.swift` adds a **Seed test data** button to the empty Library screen, which fills it with sample topics, websites, and pages.
 
-- Bug fixes with a reproducer.
-- Accessibility improvements.
-- New readers, site-specific extractors, or parser enhancements.
-- Privacy hardening that does not add complexity.
-- Docs edits — every page on this site is a markdown file you can edit.
+## Test
 
-## What we are careful about
+The unit tests live in `LumenTests` and use Swift Testing (`@Test` and `#expect`). The UI tests in `LumenUITests` use XCTest and cover launch, search, and settings. Both targets run inside the app, and so they need an iOS Simulator or a connected iPhone rather than the Mac alone.
 
-- Features that would require a backend. We do not run one.
-- Third-party SDKs, analytics, or telemetry. None allowed.
-- Design changes that break the calm. Lumen is deliberately quiet.
+In Xcode, press **⌘U**. From the command line, run `scripts/test.sh`, which builds into `build/DerivedData` and leaves Xcode&rsquo;s own build folder alone:
 
-## License reminder
+```bash
+scripts/test.sh                 # unit tests, the default
+scripts/test.sh ui              # UI tests
+scripts/test.sh all             # every test target
+scripts/test.sh unit -only-testing:LumenTests/TopicVoteTests
+```
 
-AGPL-3.0 means if you distribute a modified version, you must share your changes under the same license. That rule is a feature, not a friction: it keeps the project honest about staying open as it grows.
+With code signing turned off, the script runs without a signing file of your own. It ends with a line of counts (`result=… passedTests=… failedTests=… skippedTests=…`) and the path of the saved test report, and it exits with a non-zero code when any test fails.
+
+The script uses the Xcode that `xcode-select` points to, on an iPhone 17 Pro simulator running iOS 26.2. Two environment variables change either one for a single run:
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer scripts/test.sh
+LUMEN_TEST_DESTINATION='platform=iOS Simulator,name=iPhone 16 Pro,OS=18.5' scripts/test.sh
+```
+
+If Xcode reports &ldquo;Unable to find a destination&rdquo;, its iOS platform is probably missing. You can add it under **Xcode → Settings → Components**.
+
+### Writing a test
+
+- Write new unit tests with Swift Testing. Name each test after the behavior it checks, such as `identicalVectorsYieldOne`; a failure then explains itself without anyone opening the file.
+- Before you trust a new test, watch it fail. Break the code, run only that test with `-only-testing:`, check that it fails for the right reason, and then restore the code.
+- To test the database, create a `KnowledgeStorage` with `KnowledgeStorage(databasePath:)` pointing at a file in a fresh temporary folder, and delete the folder when the test ends, as `KnowledgeStorageWebsiteStatsTests` does. Never use `KnowledgeStorage.shared` in a test, because it is the app&rsquo;s real library.
+- The language model never runs on the Simulator. For a change to summaries, topic picks, or answers, test the plain functions around the model: prompt building, answer parsing, relevance checks, and scoring. Say in the pull request that the model&rsquo;s own behavior still needs a check on an iPhone.
+
+## Lint
+
+CI runs SwiftLint in strict mode, which turns every warning into an error. Run the same command locally before you push, because a single warning fails the check:
+
+```bash
+swiftlint --strict
+```
+
+The configuration is `.swiftlint.yml` at the repository root. Beyond the standard rules, it adds two of its own:
+
+- `print()` is not allowed. Log through `os.Logger`, either with `KnowledgeLogger` or with `Logger(subsystem:category:)`.
+- A logger message that interpolates a value has to mark that value with `privacy:` as `.public`, `.private`, or `.sensitive`.
+
+Force unwrapping is also flagged, and `force_cast` and `force_try` are errors. The codebase avoids comments; code is expected to explain itself through its names.
+
+## Continuous integration
+
+Every push and pull request to `main` runs four jobs on GitHub Actions: SwiftLint, a debug build with the full test suite on an iPhone 16 Pro simulator, an unsigned release build, and a CodeQL security scan of the Swift code. The build and test jobs use Xcode 26.2.
+
+## Issues and pull requests
+
+The repository has no issue or pull request templates, and so the description you write is what a maintainer reads. For a bug, give your iPhone model, your iOS version, what you did, what you expected, and what happened instead. For a pull request, the process is:
+
+<Steps>
+<Step>
+
+Fork the repository and create a branch off `main`.
+
+</Step>
+<Step>
+
+Make the change in the style of the surrounding code, and run `swiftlint --strict` and the tests.
+
+</Step>
+<Step>
+
+Test on a physical iPhone if the change touches the language model, summaries, or Ask.
+
+</Step>
+<Step>
+
+Open a pull request against `main` that says what changed and why.
+
+</Step>
+</Steps>
+
+A bot marks inactive threads as stale. An issue goes stale after 60 days without activity, and a pull request after 30; either closes 14 days later unless there is new activity. Issues labelled `bug`, `security`, `pinned`, `roadmap`, or `help-wanted` are never marked stale.
+
+## Licence
+
+Lumen is licensed under the GNU Affero General Public License, version 3 (AGPL-3.0), with one added permission. Under section 7 of that licence, the copyright holder allows the software, with or without changes, to be distributed through Apple&rsquo;s App Store under Apple&rsquo;s terms, even where those terms would otherwise conflict with the AGPL. The exception covers the App Store only, and every other way of distributing Lumen stays under the plain AGPL-3.0. If you distribute a modified version, you have to make your source available under the same licence. The full text is in [`LICENSE`](https://github.com/Lux-Softworks/Lumen/blob/main/LICENSE).

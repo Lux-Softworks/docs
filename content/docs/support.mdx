@@ -1,32 +1,75 @@
 ---
 title: Support
-description: How to get help with Lumen.
+description: Where to get help with Lumen, and what to check first when something goes wrong.
 ---
 
-Lumen runs entirely on your device, so there is no account to recover and no server-side state we can inspect. That keeps the support surface small and honest.
+Lumen keeps everything on your phone. As a result, there is no account to recover and no copy of your library anywhere else to look at. Help happens in public, on GitHub, and most problems can be solved on the phone itself with the checks further down this page.
 
-## Bug reports and feature requests
+## Get help
 
-The fastest path is GitHub. Open an issue at [github.com/Lux-Softworks/Lumen/issues](https://github.com/Lux-Softworks/Lumen/issues) with:
+Open an issue at [github.com/Lux-Softworks/Lumen/issues](https://github.com/Lux-Softworks/Lumen/issues). The issue tracker is the one support channel the project lists, and it covers bug reports, feature requests, and privacy questions alike. A useful report includes:
 
-- iOS version and device model.
-- Lumen version (Settings &rarr; About).
-- A description of what you did, what you expected, and what happened.
+- your iPhone model and iOS version,
+- whether you installed Lumen from the App Store or built it from source,
+- what you did, what you expected, and what happened instead,
+- the address of the page, if the problem happens on one site.
 
-If the bug involves a specific page, include the URL. We do not collect any of this automatically, so the more you write, the more we can act on.
+Lumen sends no crash reports or usage data, and so the details in the issue are all anyone has to work from. Leave out anything from your library you would not want public, because issues are visible to everyone.
 
-## Direct contact
+## Troubleshooting
 
-For anything that does not belong in a public issue &mdash; privacy concerns, App Store questions, press &mdash; email **dkosukhintech@gmail.com**. Replies usually land within a few business days.
+<Accordions type="single">
+<Accordion title="Ask replies “Couldn't generate an answer.”">
 
-## Before reporting
+This reply usually means the language model never loaded. The first time Lumen needs the model, it downloads about 700 MB from Hugging Face, and while it does, the sparkle on the Ask tab spins. If the download fails, the sparkle stops without an error, and questions fail afterwards.
 
-A few things resolve themselves:
+Connect to the internet, check that the phone has at least 1.2 GB free, then close the knowledge panel and open it again. Opening the panel starts the download again, and once the model is on the phone, Ask works offline.
 
-- **Model failed to download.** First launch needs network access to fetch the language model from Hugging Face. Check connectivity and reopen the app.
-- **Library looks empty.** `Clear Browsing Data` resets the library. The action is destructive and not recoverable.
-- **Knowledge answers feel off.** The model runs locally on a small parameter count. Phrasing the question differently often helps.
+</Accordion>
+<Accordion title="The phone is low on storage">
 
-## What we will not ask for
+Lumen will not load the model with less than 1.2 GB of free space. The check runs every time the model loads, not only before the first download, and so a phone that fills up later will stop answering and summarizing even though the model is already stored. Free up space in iOS Settings, then close and reopen the knowledge panel.
 
-We will never ask for your browsing history, your library contents, or any personal credentials. Lumen has no way to read those off your device, and support does not need them to help.
+</Accordion>
+<Accordion title="Pages have no summary, or a website has no overview">
+
+Summaries come from the language model. A page saved while the model could not load is therefore kept without one. Lumen does not go back and summarize those pages later. A website&rsquo;s overview is written from its pages&rsquo; summaries when you open the website, and so a website whose pages all lack summaries shows no overview. Pages you read after the model loads are summarized as usual.
+
+</Accordion>
+<Accordion title="A page I read is not in the library">
+
+Lumen saves a page only after you have read it: for a page of average length, about 12 seconds on screen and a scroll through 30% of it, less for short pages. Selecting text on the page also counts. Several things stop a page from being saved even then:
+
+- Collect Knowledge is off in the site menu. The switch applies to every site, not only the one you are on.
+- The tab is incognito. Nothing from an incognito tab is saved.
+- The page is one Lumen never saves: search results, sign-in and account pages, checkout, webmail, banking, health portals, chat apps, and AI chat sites.
+- Lumen could not find an article on the page. Pages that are mostly links, images, or app interface often have none.
+
+</Accordion>
+<Accordion title="A website is in the wrong topic, or under Uncategorized">
+
+Lumen gives each page a topic and files a website under the topic most of its pages share, and so a site that covers many subjects can land somewhere unexpected. A website stays under Uncategorized while none of its pages matches a topic, which is always the case for pages not in English. To fix either case, long-press the website in the Library and choose **Move to…**. Its saved pages move with it, and so it stays there until newer pages from that site, filed under another topic, outnumber them. Moving a website to Uncategorized clears its pages' topics, and so the next page from it that matches a topic files it again.
+
+</Accordion>
+<Accordion title="An answer is labelled “Weakly grounded”">
+
+The label means the answer shares little with the pages it cites, and so it may lean on what the model already knew rather than on your reading. Check the listed sources, which open in a new tab when you tap them, or ask again with words that appear in the page you have in mind.
+
+</Accordion>
+<Accordion title="A site looks broken or will not load">
+
+Tracker blocking occasionally removes something a site needs. Open the site menu, go to **Site Settings**, and turn off **Block Trackers** for that site only; the rest of the web stays protected. The same screen has **Enable JavaScript** and **Block Popups**, which are worth checking if a button or a sign-in window does nothing.
+
+</Accordion>
+<Accordion title="My history or library disappeared">
+
+Each of the three reset controls in Settings removes something different:
+
+- **Clear Browsing Data** removes page history, search history, cookies, and site data. Losing the cookies signs you out of websites. The library is untouched.
+- **Clear History on Close**, when it is on, removes page and search history every time Lumen goes to the background.
+- **Delete All Knowledge** removes the whole library: pages, websites, topics, summaries, embeddings, and highlights.
+
+The library is excluded from device backups, and so a deleted library, a deleted app, or a new phone cannot be restored from iCloud. To keep a copy, use **Export Knowledge** in Settings, which saves the library as a zip of Markdown files and a JSON file.
+
+</Accordion>
+</Accordions>

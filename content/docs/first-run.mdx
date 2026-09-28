@@ -1,25 +1,30 @@
 ---
 title: First run
-description: What happens the first time you open Lumen.
+description: What you see the first time you open Lumen, and when it downloads its language model.
 ---
 
-On first launch, Lumen downloads the local language model, `mlx-community/Llama-3.2-1B-Instruct-4bit` (roughly 700 MB), from Hugging Face and caches it on-device. This is the only time Lumen talks to Hugging Face and is the only component of the app that ever leaves your network boundary.
+Lumen has no welcome screens and nothing to sign in to. The first launch opens straight onto the home screen: a large sparkle with one short line beneath it, picked for the time of day, such as "good morning, let's learn." before 11 a.m. or "still up?" late at night. Below the sparkle, the bar along the bottom of the screen holds search and settings, and a small tab on the upper right edge of that bar opens the knowledge panel.
+
+## Your first page
+
+Tap search and type a query or a web address. Queries go to Google until you choose DuckDuckGo, Bing, or Brave under **Search Engine** in Settings. While you type, the chosen engine suggests completions; **Search Suggestions** in Settings turns those off.
+
+Saving pages is on from the start. Once you have stayed on a page and scrolled through part of it, Lumen pulls out the article text, files the page under a topic and a website, and shows **Knowledge initiated** at the top right of the screen. Reading further on a page you already saved shows **Knowledge updated** in its place. Incognito tabs are never saved, and **Collect Knowledge** in Settings stops saving for every site.
+
+## When the model downloads
+
+Lumen downloads nothing at install or at launch. Its language model, `mlx-community/Llama-3.2-1B-Instruct-4bit` (about 700 MB), comes from Hugging Face the first time the app needs it, which is either when it summarizes your first saved page or when you first open the knowledge panel. After that one download, the model stays on the phone and runs without a network connection.
+
+Before downloading, Lumen checks for at least 1.2 GB of free space. With less, the model does not load: saved pages get no summaries, and Ask cannot answer until you free up space and open the panel again.
 
 <Callout type="info">
-  The model fetch is a one-time transaction. Once cached, it is reused forever
-  and no further requests hit Hugging Face.
+  The download shows no progress bar. Started from a saved page, it runs in the
+  background with nothing on screen; started from the knowledge panel, it shows
+  as a spinning sparkle on the Ask tab.
 </Callout>
 
-## What to expect
+## The knowledge panel
 
-| Phase       | What you see                       | How long                |
-| ----------- | ---------------------------------- | ----------------------- |
-| Cold start  | Lumen icon, empty browser          | Instant                 |
-| Model fetch | Knowledge panel marked `Preparing` | 1 to 3 minutes on Wi-Fi |
-| Ready       | Knowledge panel shows the sparkle  | Stays ready after that  |
+The panel opens on **Ask**. While the model loads, the sparkle above "Ask about what you've read" spins, and the question box shows three moving dots and takes no input until loading ends. Once the model is ready, the box reads "What do you want to know?" The model also unloads after 30 seconds without use, and so the same short wait can return later; that reload reads from the phone and downloads nothing.
 
-## Optional: pre-warm your library
-
-If you want the Ask panel to answer useful questions from day one, browse five to ten articles you care about before opening it. Lumen classifies, embeds, and summarizes each one in the background. The retrieval step then has something to grip on.
-
-Pages you read once and never return to also get stored. The library trims stale content automatically after 90 days of non-engagement.
+**Library**, the panel's other tab, reads "No topics yet" until your first page is saved. [Knowledge panel](/knowledge) covers both tabs in full.

@@ -1,55 +1,261 @@
 ---
 title: Architecture
-description: The shape of Lumen — MLX, WKWebView, SQLite, and a single sandbox.
+description: How Lumen is put together, from the folders in the repository to the tables in its database.
 ---
 
-Lumen is a single Swift app with three main layers: the browser engine, the on-device model, and the local knowledge store. Each layer is either Apple-native or a thin wrapper around something Apple ships.
+Lumen is a single iOS app written in Swift and SwiftUI, and it has no server behind it. The app has four parts: a browser built on Apple&rsquo;s `WKWebView`, a pipeline that turns the pages you read into a library, a language model that runs on the phone, and a SQLite database that holds the library. This page follows a page through those parts in the order it meets them.
 
-## Layers
+## Folder layout
 
-| Layer           | Stack                                                   |
-| --------------- | ------------------------------------------------------- |
-| UI              | SwiftUI, iOS 18+                                        |
-| Browser engine  | `WKWebView`                                             |
-| AI inference    | `MLX Swift` running Llama 3.2 1B 4-bit                  |
-| Semantic search | Apple `NLEmbedding` + FTS5 keyword ranking              |
-| Storage         | SQLite with the FTS5 virtual table                      |
-| Privacy filter  | `ThreatDetector` (tracker + fingerprint classification) |
+The repository holds one Xcode project, `Lumen.xcodeproj`, with an app target and two test targets. Inside the app target, the code is grouped by what it does rather than by type.
 
-## On-device AI
+<Files>
+  <Folder name="Lumen" defaultOpen>
+    <Folder name="App">
+      <File name="LumenApp.swift" />
+      <File name="AppBootstrap.swift" />
+      <File name="ClearHistoryOnClose.swift" />
+    </Folder>
+    <Folder name="Config">
+      <File name="KnowledgeSeeding.swift" />
+    </Folder>
+    <Folder name="Core">
+      <Folder name="Utilities" />
+      <File name="BrowserSettings.swift" />
+      <File name="SiteSettingsStore.swift" />
+      <File name="HTTPSUpgradeLogic.swift" />
+      <File name="PrivacyPolicy.swift" />
+    </Folder>
+    <Folder name="Features" defaultOpen>
+      <Folder name="Browser" defaultOpen>
+        <Folder name="Knowledge" />
+        <Folder name="Models" />
+        <Folder name="Services" />
+        <Folder name="ViewModels" />
+        <Folder name="Views" />
+        <Folder name="Web" />
+      </Folder>
+      <Folder name="Export" />
+    </Folder>
+    <Folder name="Knowledge">
+      <File name="LocalKnowledgeProvider.swift" />
+      <File name="KnowledgePrompts.swift" />
+      <File name="PromptBudgeter.swift" />
+      <File name="AnswerValidityScorer.swift" />
+      <File name="DateQueryParser.swift" />
+    </Folder>
+    <Folder name="Resources">
+      <File name="disconnect-services.json" />
+    </Folder>
+    <Folder name="Services">
+      <File name="ContentBlockingRules.swift" />
+      <File name="TrackerBlockList.swift" />
+      <File name="TrackerDatabase.swift" />
+      <File name="NetworkInterceptor.swift" />
+      <File name="ThreatDetector.swift" />
+    </Folder>
+    <Folder name="UI" />
+  </Folder>
+  <Folder name="LumenTests" />
+  <Folder name="LumenUITests" />
+  <Folder name="Configuration">
+    <File name="Signing.xcconfig" />
+    <File name="Signing.local.example.xcconfig" />
+  </Folder>
+  <Folder name="scripts">
+    <File name="test.sh" />
+  </Folder>
+  <File name="Lumen.xcodeproj" />
+  <File name=".swiftlint.yml" />
+</Files>
 
-The model is a 4-bit quantized build of Meta&rsquo;s Llama 3.2 1B Instruct, run through [MLX Swift](https://github.com/ml-explore/mlx-swift) on the Neural Engine and GPU. At this size, the model fits comfortably on modern iPhones and returns short, cited answers in a few hundred milliseconds.
+| Folder             | What lives there                                                                                                          |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `App`              | The app entry point, the startup step that opens the database, and the handler behind Clear History on Close.             |
+| `Config`           | One build switch, `seedKnowledge`, which adds a button that fills an empty library with sample data.                      |
+| `Core`             | Global and per-site settings, the HTTPS upgrade rule, URL normalizing, search engines, and small shared helpers.          |
+| `Features/Browser` | Tabs, the web view and the scripts injected into it, the reading signal, knowledge capture, the database, and embeddings. |
+| `Features/Export`  | The code that writes an export as Markdown files and a JSON file, then zips them.                                         |
+| `Knowledge`        | The wrapper around the language model, its prompts, the answer grounding score, and the parser for dates in questions.    |
+| `Resources`        | The bundled Disconnect tracker list.                                                                                      |
+| `Services`         | Tracker blocking, the navigation delegate that applies it, and the handoff to other apps.                                 |
+| `UI`               | The SwiftUI views: the bottom bar, settings, tabs, the knowledge panel, and export.                                       |
 
-Sentence embeddings come from Apple&rsquo;s `NLEmbedding`. Semantic search combines cosine similarity over those embeddings with FTS5 keyword ranking, then feeds the top passages into the model as context.
+Outside the app target, `Configuration` holds the signing settings, and `scripts/test.sh` runs the tests from the command line.
 
-## Storage
+## Startup
 
-All content lives in a single SQLite database inside the app&rsquo;s sandbox. The schema separates page bodies, sentence embeddings, topic labels, and generated summaries. An FTS5 virtual table sits on top for full-text search.
-
-```sql
--- Rough shape of the content table
-CREATE TABLE pages (
-  id       TEXT PRIMARY KEY,
-  url      TEXT NOT NULL,
-  title    TEXT,
-  body     TEXT,
-  topic    TEXT,
-  read_at  INTEGER
-);
-
-CREATE VIRTUAL TABLE pages_fts
-USING fts5(title, body, content='pages');
-```
-
-The database is never exported over the network. Backups happen only through the phone&rsquo;s own encrypted iCloud backup if you have one configured, which is opaque to Lumen.
+When the app launches, `LumenApp` starts `AppBootstrap` and shows the browser. The bootstrap opens the database and loads the tracker list at the same time, and it reports its progress as one of four states: pending, initializing, ready, or failed. After a failure, the app can run the bootstrap again.
 
 ## Browser engine
 
-The web view is Apple&rsquo;s `WKWebView` configured for minimal ambient leakage:
+Every tab is a `WKWebView`. A normal tab uses the default website data store, while an incognito tab uses a non-persistent store that keeps nothing on disk. Lumen does not change what a site renders; it decides which requests may load and which scripts run alongside the page.
 
-- HTTPS-only upgrades on every navigation.
-- Third-party cookies blocked by default.
-- Mixed-content loads blocked.
-- Tracker and fingerprint classification through `ThreatDetector`.
+The navigation delegate (`NetworkInterceptor`) makes those decisions. It upgrades any `http://` navigation to `https://` before the request leaves, and it refuses any scheme a browser does not handle. When you tap a link with such a scheme, such as `mailto:` or `tel:`, the Open Native Apps setting decides what happens, and by default Lumen asks &ldquo;Open in another app?&rdquo; before leaving.
 
-Lumen does not override or repaint the page DOM. What you see is what the site shipped, minus the instrumentation.
+### Content blocking
+
+Tracker blocking runs inside WebKit as `WKContentRuleList` rules, which Lumen compiles at runtime from the Disconnect list bundled in `Resources/disconnect-services.json`. The rules block third-party requests to domains in the advertising, analytics, social, cryptomining, fingerprinting, and email categories. Two cases are left alone on purpose:
+
+- Domains that Disconnect also lists as content or anti-fraud stay unblocked, because blocking them breaks sites.
+- A tracker owned by the same company as the site you are on stays unblocked on that site.
+
+A second rule list upgrades every `http://` subresource to HTTPS, and it is always on. When Block Trackers is on, Lumen also blocks third-party cookies. Block Trackers applies to all sites from Settings, or to one site from that site&rsquo;s own settings, and a per-site choice wins over the global one.
+
+The site menu shows how many trackers Lumen blocked on the current page. A script counts the tracker hosts in the page&rsquo;s `script`, `img`, `iframe`, `link`, and media elements, and as a result requests made through `fetch` or `XMLHttpRequest` are blocked but never counted. The number is therefore a lower bound, and it resets on each new page.
+
+### Fingerprinting
+
+A script injected into every frame watches for calls to the canvas, WebGL, and audio APIs that fingerprinting scripts rely on. When one third-party script makes three such calls within ten seconds, Lumen replaces those APIs on the page with versions that return empty results.
+
+## Knowledge pipeline
+
+A page enters the library only after you have read it. A script in each page measures how long the page has been visible and how far you have scrolled, and it fires once you pass a threshold scaled to the page&rsquo;s length. For a page of average length, the threshold is 12 seconds and 30% of the page. Selecting text also counts as reading, and so does staying on a page for two and a half times the time threshold.
+
+Once the signal fires, capture runs through these steps:
+
+<Steps>
+<Step>
+
+**Checks.** Capture stops if Collect Knowledge is off or the tab is incognito. Lumen also skips pages it never saves: search results, sign-in and account pages, checkout, webmail, banking, health portals, chat apps, and AI chat sites.
+
+</Step>
+<Step>
+
+**Extraction.** Lumen reads the page&rsquo;s HTML and runs it through `swift-readability` to find the article, then strips navigation, forms, and scripts from the result with `SwiftSoup`. The title, author, description, and site name come from the same pass.
+
+</Step>
+<Step>
+
+**Classification.** The title and the opening of the article are embedded and compared against prototype vectors for 29 fixed topics, such as Film, Programming, and Health. Up to three topics that clear a minimum score become candidates, and the closest one becomes the page&rsquo;s topic for now. A page not in English, or with no candidate, gets no topic. The website then takes whichever topic most of its pages share and keeps its current topic on a tie. A website whose pages have no topic appears under Uncategorized.
+
+</Step>
+<Step>
+
+**Saving.** The page is written to the database under its website, and the website is created if it is new.
+
+</Step>
+<Step>
+
+**Enrichment.** A background task then fills in the rest: an embedding of the whole page, the names of people, places, and organizations found by `NLTagger`, embeddings for passages of about 400 words, and a short summary from the language model. With the summary written, the model picks the best of the page&rsquo;s candidate topics, and the website&rsquo;s topic is counted again. A new website also gets a first summary. When a long page has more passages than Lumen embeds, the passages that contain your highlights are kept first. A low-memory warning from iOS cancels the task, which stops before its next step; a model call already running still finishes.
+
+</Step>
+</Steps>
+
+Embeddings come from Apple&rsquo;s `NLContextualEmbedding` for English text, averaged across tokens, with the sentence embedding from `NLEmbedding` as the fallback. Nothing in the pipeline leaves the phone.
+
+### Asking questions
+
+When you ask a question, Lumen embeds it and ranks your pages by cosine similarity, adds the pages that a full-text search over titles and bodies finds, and reranks the combined set by the best matching passage in each page. Questions that name a time, such as &ldquo;last week&rdquo;, search only pages saved in that window. Up to four pages go to the model along with their closest passages and any highlights, and the model streams an answer that cites them.
+
+After the answer finishes, Lumen scores how closely it matches its sources, weighting similarity of meaning at 60% and shared words at 40%. An answer that scores low is labelled &ldquo;Weakly grounded&rdquo;. The conversation is held in memory only and is never written to the database.
+
+## On-device model
+
+The model is `mlx-community/Llama-3.2-1B-Instruct-4bit`, a 4-bit build of Meta&rsquo;s Llama 3.2 1B Instruct, run through `mlx-swift` and `mlx-swift-lm`. Lumen pins it to one revision on Hugging Face and downloads it the first time it is needed, either when a page is first summarized or when you open the knowledge panel. The download is about 700 MB, and while the model loads, the sparkle on the Ask tab spins and the question box takes no input. After that, the model runs offline.
+
+Before it loads the model, Lumen checks for at least 1.2 GB of free space and refuses to load with less. The model unloads after 30 seconds without use, when the app goes to the background, and when iOS warns of low memory. On the iOS Simulator, the model never loads, and answers are replaced with a fixed placeholder.
+
+## Storage
+
+The library is one SQLite file, `knowledge.sqlite`, in the app&rsquo;s Application Support folder. It runs in WAL mode with foreign keys on. Deleting a website therefore deletes its pages, and deleting a page deletes its embeddings, passages, and entities. Highlights survive a deleted page, because their link to the page is set to null rather than removed.
+
+Lumen marks the database file and its WAL and shared-memory files with `isExcludedFromBackup`, and so the library is left out of iCloud and computer backups. The same files use the `completeUntilFirstUserAuthentication` file protection class. Nothing is pruned by age: a page stays until you delete it or use Delete All Knowledge in Settings.
+
+These are the tables the app creates. Four columns (`synthesis_updated_at`, `page_count_at_synthesis`, `visit_count`, `content_hash`) are added by migrations on older databases, and they are shown in place here.
+
+```sql
+CREATE TABLE topics (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  color TEXT,
+  website_count INTEGER DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE websites (
+  id TEXT PRIMARY KEY,
+  domain TEXT NOT NULL UNIQUE,
+  display_name TEXT NOT NULL,
+  summary TEXT,
+  favicon TEXT,
+  topic_id TEXT,
+  page_count INTEGER DEFAULT 0,
+  total_words INTEGER DEFAULT 0,
+  first_visit INTEGER NOT NULL,
+  last_visit INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  synthesis_updated_at INTEGER,
+  page_count_at_synthesis INTEGER DEFAULT 0,
+  FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE SET NULL
+);
+
+CREATE TABLE pages (
+  id TEXT PRIMARY KEY,
+  website_id TEXT NOT NULL,
+  url TEXT NOT NULL,
+  normalized_url TEXT NOT NULL UNIQUE,
+  domain TEXT NOT NULL,
+  title TEXT,
+  content TEXT NOT NULL,
+  summary TEXT,
+  timestamp INTEGER NOT NULL,
+  author TEXT,
+  description TEXT,
+  reading_time INTEGER,
+  scroll_depth REAL,
+  word_count INTEGER,
+  created_at INTEGER NOT NULL,
+  visit_count INTEGER NOT NULL DEFAULT 1,
+  content_hash TEXT,
+  topic_id TEXT,
+  FOREIGN KEY (website_id) REFERENCES websites(id) ON DELETE CASCADE
+);
+
+CREATE TABLE page_embeddings (
+  page_id TEXT PRIMARY KEY,
+  vector BLOB NOT NULL,
+  FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE
+);
+
+CREATE TABLE page_chunks (
+  id TEXT PRIMARY KEY,
+  page_id TEXT NOT NULL,
+  chunk_index INTEGER NOT NULL,
+  text TEXT NOT NULL,
+  vector BLOB NOT NULL,
+  FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE
+);
+
+CREATE TABLE page_entities (
+  page_id TEXT NOT NULL,
+  entity TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  PRIMARY KEY (page_id, entity, kind),
+  FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE
+);
+
+CREATE TABLE annotations (
+  id TEXT PRIMARY KEY,
+  page_id TEXT,
+  normalized_url TEXT NOT NULL,
+  url TEXT NOT NULL,
+  text TEXT NOT NULL,
+  prefix TEXT NOT NULL DEFAULT '',
+  suffix TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE SET NULL
+);
+
+CREATE VIRTUAL TABLE pages_fts USING fts5(
+  title,
+  body,
+  domain,
+  content=pages,
+  content_rowid=rowid
+);
+```
+
+The `pages_fts` table is an FTS5 full-text index over each page&rsquo;s title, body, and domain, and three triggers keep it in step with `pages`. Ask uses it for keyword matches and to check spelling corrections against words you have actually read. The `annotations` table holds your highlights, and the text on either side of each highlight (`prefix` and `suffix`) lets Lumen find it again when you reopen the page. When Lumen changes how it computes embeddings, it bumps the database&rsquo;s `user_version` and clears `page_embeddings` and `page_chunks`, leaving the pages themselves in place.
+
+Settings and history live outside the database. Global settings and page history are kept in `UserDefaults`, while per-site settings and search history are JSON files in the same folder as the database. Settings &rarr; Export Knowledge copies the library out as a zip of Markdown files and a `knowledge.json` file, with switches for highlights, summaries, embeddings, and timestamps.

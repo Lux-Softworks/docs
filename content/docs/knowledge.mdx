@@ -1,48 +1,125 @@
 ---
 title: Knowledge panel
-description: The two modes at the core of Lumen — Ask and Library.
+description: How Lumen saves what you read, files it, and answers questions about it on your phone.
 ---
 
-The knowledge panel lives at the bottom of the browser. Pull it up and you get two modes: **Ask** and **Library**. Both run fully on-device.
+The knowledge panel holds two things. The Library is every page Lumen has saved while you browsed, filed by topic and website. Ask is a chat that answers questions from those saved pages, using a small language model that runs on the phone.
+
+## When a page gets saved
+
+Lumen does not save every page you open. A script on the page watches how you read it, and it only counts time while the page is on screen. A page is saved once you have stayed long enough and scrolled far enough, and both bars depend on how long the page is compared with your screen.
+
+| Page length (screens) | Time on page | Scrolled through |
+| --------------------- | ------------ | ---------------- |
+| Under 1.4             | 5 seconds    | Any amount       |
+| 1.4 to 2.5            | 8 seconds    | 35%              |
+| 2.5 to 3.5            | 12 seconds   | 30%              |
+| 3.5 to 6              | 12 seconds   | 25%              |
+| Over 6                | 12 seconds   | 15%              |
+
+A few other things count as reading, even before those bars are met:
+
+- selecting at least four characters of text, or copying text;
+- staying on the page for two and a half times the time in the table;
+- switching away from the page or leaving it after at least three seconds.
+
+When you leave a page that was already saved, Lumen sends one more update if you read noticeably further (more than a tenth of the page) or for more than 30 seconds longer. The saved reading time and scroll depth are updated to match.
+
+After the reading signal fires, Lumen pulls the article text out of the page. If it cannot find a readable article, nothing is saved. A short pill then shows **Knowledge initiated** for a new page, or **Knowledge updated** for a page you had saved before. Revisiting a page updates it rather than adding a copy.
+
+### Pages Lumen never saves
+
+Nothing is saved in an incognito tab, or while **Collect Knowledge** is off. Lumen also skips these pages, where saving the text would be unwelcome or useless:
+
+- Search results pages, and any address with a `q`, `query` or `search` parameter.
+- AI chat sites, such as ChatGPT, Claude, Gemini, Copilot, Perplexity and Poe.
+- Sign-in and account hosts, such as `accounts.`, `login.`, `auth.`, `id.` and `sso.` addresses.
+- Webmail, including Gmail and Outlook.
+- Banks and payment services, including PayPal, Venmo, Cash App and Coinbase, and any host with "bank", "banking" or "health" in its name.
+- Patient portals, such as MyChart.
+- Messaging apps on the web, including WhatsApp, Messenger, Discord, Slack and Teams.
+- Hosts starting with `admin.`, `portal.` or `dashboard.`.
+- Paths for sign-in, sign-up, accounts, settings, checkout, carts, passwords, billing, payments, inboxes, messages, chats and security.
+
+## How pages are filed
+
+Every saved page belongs to a website, and every website sits in a topic. The website's name comes from the name the site gives itself, or from its domain when it gives none.
+
+Lumen gives each page a topic in two passes. First, it compares the page title and opening text with a fixed list of 29 topics, using Apple's on-device word embeddings, and keeps up to three that match well enough. Once the language model has summarized the page, it picks the best fit among those three. A page that is not in English, or that matches no topic, gets none. A website sits under whichever topic most of its pages share, and so it can change topic as you save more from the site; on a tie, it keeps the topic it has. While none of a website's pages has a topic, the website stays under **Uncategorized**. A topic folder appears only once it has something in it.
+
+<Accordions type="single">
+  <Accordion title="The 29 topics">
+    AI, Programming, Technology, Finance, Business, Sports, Health, Science,
+    Travel, Politics, Design, Gaming, Music, Film, Anime, Food, Education, Law,
+    History, Art, Photography, Books, Fashion, Automotive, Climate,
+    Productivity, Psychology, Philosophy and Culture.
+  </Accordion>
+</Accordions>
+
+If Lumen filed a website in the wrong place, long-press it in the Library and choose **Move to…**. Its saved pages move with it, and so it stays there until newer pages from that site, filed under another topic, outnumber them. Moving a website to Uncategorized clears its pages' topics, and so the next page from it that matches a topic files it again. The list shows your other topics, plus **Uncategorized** when the website currently has a topic.
+
+## Summaries and site synthesis
+
+Once a page is saved, the model writes a one-sentence summary of it from the title and opening text. The first time Lumen saves a page from a new website, it also writes a one-sentence note on what that website is for.
+
+When you open a website in the Library and it has gained pages since you last looked, Lumen writes a short synthesis of the site, at most 40 words, from the summaries of its eight most recent pages. Topics have no summary of their own.
+
+## The Library
+
+The Library opens on your topics. Inside a website, pages are grouped into reading sessions, and a gap of more than two hours starts a new one. Opening a page shows its summary, how long you read it and how far you got, any highlights you made, and the full saved text.
+
+Long-press any row to act on it.
+
+| Row     | Menu                                 | What Delete removes                            |
+| ------- | ------------------------------------ | ---------------------------------------------- |
+| Topic   | **Export**, **Delete**               | The topic and every website and page inside it |
+| Website | **Export**, **Move to…**, **Delete** | The website and all its saved pages            |
+| Page    | **Export**, **Delete**               | That one page                                  |
+
+**Uncategorized** has no Export item, and deleting it removes every website and page inside it while the folder itself stays. Every Delete asks you to confirm first, and it cannot be undone. Highlights are kept when you delete a page, website or topic, and **Delete All Knowledge** in Settings is the one way to remove them all at once.
+
+## Highlights
+
+Select text on any page and choose **Highlight** from the menu. Lumen marks the passage in yellow, saves it with the words around it, and marks it again each time you reopen the page. To remove one, tap it and choose **Remove Highlight**, or tap the × beside it under **Highlights** on the saved page.
+
+Highlighting also tells Lumen that you are reading, and it saves the page straight away, as long as the page could be saved anyway. Highlights are not saved in incognito tabs.
 
 ## Ask
 
-You type a question, semantic search pulls the most relevant passages from your reading, and the local model answers with citations. Because the model is small and the context is yours, responses lean conservative. When a question cannot be grounded in pages you have actually read, Lumen says so.
+When you open the panel, the model starts loading. While it loads, the sparkle above "Ask about what you've read" spins and the text box is greyed out. Once the sparkle stops, type a question about something you have read.
 
-```text
-You
-  what did I read about closures?
+To answer, Lumen first decides whether you are chatting or asking about your reading. Questions like "what did I read about…" or "tell me about…" always go to your library. It then looks for matching pages two ways, by meaning and by exact words, and keeps up to four that clear a relevance bar. The previous answer's sources stay in the running, and so follow-up questions keep their context.
 
-Lumen  · Well grounded in sources
-  Closures are functions that keep a reference
-  to variables from the scope they were defined
-  in. Three pages in your library cover this:
+A few things shape the search:
 
-  · emilkowal.ski · Building libraries
-  · overreacted.io · useEffect
-  · mdn.io · Closures
-```
+- Date phrases like "yesterday", "last week", "past 10 days", "in March", "Q2" or "since Monday" narrow the search to pages saved in that window.
+- If a word looks misspelled and the corrected word appears in your library, Lumen searches for the correction and says "Showing results for" above the answer.
+- If nothing clears the bar, Lumen says "Nothing in your saved pages matched that" and suggests topics from your library, without calling the model.
 
-Every answer carries a grounding label:
+The model sees only the matched pages, their summaries and your highlights on them, and it answers in a short paragraph of two to four sentences, using bullets only when you ask for a list. The sources sit under the answer, each with its domain and title, and tapping one opens it in a new tab.
 
-- `Well grounded in sources` — retrieval found multiple relevant pages.
-- `Partially grounded` — retrieval found something, but thin.
-- `Not grounded` — the model answered without any of your reading to draw on.
+After the answer finishes, Lumen checks how closely it follows the sources and labels it.
 
-Grounding is computed from the retrieval step, not from the model. If semantic search returned nothing, the response is marked ungrounded regardless of how confident the prose sounds.
+| Label                        | Meaning                                                                                      |
+| ---------------------------- | -------------------------------------------------------------------------------------------- |
+| **Well grounded in sources** | The answer closely matches the wording and meaning of the sources                            |
+| **Partially grounded**       | Some of the answer is backed by the sources; very short answers never score higher than this |
+| **Weakly grounded**          | Little of the answer can be traced to the sources; check them before relying on it           |
 
-## Library
+An answer that says it found nothing gets no label.
 
-The Library view organizes your reading into colored topic folders: Art, Climate, Design, Film &amp; TV, Science, and so on. Classification happens in the background while you browse. You can drill into a topic to see its sites, then into a site to see individual pages with generated summaries.
+<Callout title="Ask keeps nothing">
+  Your questions and the answers stay in memory while you use the panel. Lumen
+  never writes them to storage, and saved pages are the only memory Ask has
+  between sessions.
+</Callout>
 
-The layers read like a nested table of contents:
+## Export
 
-```
-Topics  →  Sites  →  Pages
-```
+You can export one topic, website or page from its long-press menu, or the whole library from **Export Knowledge** in Browser Settings. From Settings, you can export everything, or only pages saved within a date range, which defaults to the last 30 days.
 
-Each layer has its own LLM-written summary that updates as new pages arrive.
+Four switches decide what goes in, and all start on: **Include Highlights**, **Include AI Summaries**, **Include Embeddings** and **Include Timestamps**. Lumen builds a zip file and hands it to the iOS share sheet. Inside is a `vault` folder of Markdown files, with `Topics`, `Sites` and `Pages` folders and a README, and a `knowledge.json` file with the same data for scripts.
 
-## Citations
+## Collect Knowledge
 
-Tapping a citation opens the page at the passage Lumen quoted. If the original URL has moved or is gone, Lumen shows the cached text with a warning so you can still see what the model relied on.
+**Collect Knowledge** is the switch for saving pages at all. It lives in the site menu, which the settings button opens while a page is open, and its subtitle reads **For all sites** because it applies everywhere rather than to the site you are on. It starts on. With it off, Lumen saves no new pages, and the Library and Ask keep working with what you already have.

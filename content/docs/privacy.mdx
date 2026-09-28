@@ -1,29 +1,69 @@
 ---
 title: Privacy
-description: What leaves the phone and what does not.
+description: What Lumen keeps on your phone, the three times it goes online for itself, and the settings that control both.
 ---
 
-Lumen holds a single boundary: the phone. Everything you read, every summary generated from it, every embedding computed from it, and every answer written about it lives inside the app&rsquo;s sandboxed container. None of it is uploaded, synced, or backed up to us.
+Lumen has no account, no server of its own and no analytics. Everything it learns from your reading stays on the phone, and apart from the websites you visit, it goes online for only three reasons.
 
-## The one exception
+## What stays on the phone
 
-On first launch, Lumen fetches the language model weights from Hugging Face. That is the only network request Lumen makes on your behalf for a core feature. After the fetch completes, the model runs offline forever.
+Your saved pages, their summaries, topics, websites, highlights and the search index behind Ask all live in one database on the phone. The language model that writes summaries and answers questions runs on the phone too, and so none of your reading is sent anywhere to be processed.
 
-## What we have on our side
+The knowledge database is left out of iCloud and device backups. iOS also keeps it encrypted until you unlock the phone for the first time after a restart.
 
-Nothing. There is no server to breach, no log to subpoena, no user record to lose. The flip side is that **you** are the custodian. Losing the device or reinstalling the app resets the library.
+Your questions to Ask and its answers are never written to storage at all. Browsing history, search history and your per-site settings are kept on the phone as well.
 
-## Scrubbing
+## The three times Lumen goes online
 
-Every site you visit is filtered through the `ThreatDetector` module, which classifies and blocks known trackers, fingerprinting scripts, and ad networks. The counter at the bottom of the site menu reports exact numbers per domain.
+| What               | Where it goes                                                 | What is sent                                                                                                      |
+| ------------------ | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Model download     | Hugging Face                                                  | A one-time download of the Llama 3.2 1B model, the first time Lumen needs it. After that, the model runs offline. |
+| Search suggestions | Your chosen search engine (Google, DuckDuckGo, Bing or Brave) | What you type in the address bar, to fetch suggestions. Cookies are not sent.                                     |
+| Site icons         | The website itself                                            | A request for the site's icon at `/favicon.ico`, with no cookies. Icons are kept in memory only.                  |
 
-Blocking is best-effort. If a site collects data through first-party forms you submit to it directly, Lumen cannot prevent that. What it can prevent is the ambient third-party instrumentation that follows you around the web, and it does.
+The list of trackers to block ships inside the app, and so updating it never needs a network request.
 
-## Controls you have
+## Tracker blocking
 
-- `Collect Knowledge` toggle per site, from the site menu.
-- `Clear Browsing Data` from the Browser Settings screen. Destructive, cannot be undone.
-- `Clear History on Close` switch if you want a shorter memory by default.
-- Delete the app. iOS removes the sandbox and Lumen has no state left anywhere.
+With **Block Trackers** on, Lumen stops known trackers from loading on the pages you visit. The list comes from Disconnect, and Lumen blocks its advertising, analytics, social, cryptomining, fingerprinting and email tracking categories. The same switch blocks third-party cookies.
 
-For the full legal statement, see the [Privacy Policy](/privacy).
+Lumen also watches for a common fingerprinting trick, where a script draws hidden graphics or sound to identify your phone. If a script from another site reads the canvas, WebGL or audio features three times within ten seconds, Lumen switches those features off for the rest of the page. This check runs whether or not **Block Trackers** is on.
+
+Every address is also upgraded from `http` to `https`, and this cannot be turned off.
+
+The site menu shows "Lumen blocked N trackers on this page", counting the tracker sites it found on the current page.
+
+<Callout type="warn" title="What tracker blocking does not do">
+
+- It blocks trackers loaded from other sites. A site's own analytics, served from its own domain, still runs.
+- A tracker owned by the same company as the site you are on is allowed on that site.
+- Services the list also marks as content or fraud prevention are never blocked, even when they track.
+- The fingerprinting check only covers scripts from other sites, and the first few reads get through before it switches the features off.
+- The count on the site menu only includes trackers that appear in the page's markup. Trackers contacted by scripts in the background are not counted, and so the real number can be higher.
+
+</Callout>
+
+## Incognito tabs
+
+An incognito tab keeps its cookies and website data in memory and never writes them to storage. It adds nothing to your history or search history, saves no pages or highlights to your knowledge, sends no search suggestion requests and fetches no site icons.
+
+## Your controls
+
+Most controls live in **Browser Settings**, which the settings button opens when no page is open. The rest are in the site menu, which the same button opens while you are on a page.
+
+| Setting                    | Where                                                | What it does                                                                                                                                                                                                               |
+| -------------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Block Trackers**         | **Browser Settings**, under **Global Site Settings** | Blocks known trackers and third-party cookies everywhere. On by default.                                                                                                                                                   |
+| **Block Popups**           | **Browser Settings**, under **Global Site Settings** | Stops pages from opening windows on their own. On by default.                                                                                                                                                              |
+| **Enable JavaScript**      | **Browser Settings**, under **Global Site Settings** | Lets pages run scripts. On by default.                                                                                                                                                                                     |
+| **Site Settings**          | Site menu                                            | The same three switches for the site you are on. These override the global ones for that site.                                                                                                                             |
+| **Search Suggestions**     | **Browser Settings**                                 | Sends what you type in the address bar to your search engine for suggestions. On by default.                                                                                                                               |
+| **Open Native Apps**       | **Browser Settings**                                 | Decides what happens when you tap a link that opens another app. **Ask** shows an **Open in another app?** prompt first, **Always Open** skips the prompt, and **Stay in Browser** never leaves Lumen. Ask is the default. |
+| **Clear History on Close** | **Browser Settings**                                 | Clears page and search history whenever you leave the app. Off by default.                                                                                                                                                 |
+| **Clear Browsing Data**    | **Browser Settings**                                 | Deletes your history, search history and all website data, including cookies, caches and site storage. Your saved knowledge is not touched.                                                                                |
+| **Collect Knowledge**      | Site menu                                            | Turns saving pages on or off for all sites. On by default.                                                                                                                                                                 |
+| **Delete**                 | Long-press a topic, website or page in the Library   | Deletes that topic with all its websites and pages, that website with its pages, or that one page. Your highlights on those pages are kept.                                                                                |
+| **Delete All Knowledge**   | **Browser Settings**                                 | Deletes every saved page, website, topic, summary, embedding and highlight. This cannot be undone.                                                                                                                         |
+| **Export Knowledge**       | **Browser Settings**                                 | Saves a copy of your knowledge as a zip file you share wherever you choose.                                                                                                                                                |
+
+The full **Privacy Policy** is at the bottom of **Browser Settings**.

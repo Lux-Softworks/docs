@@ -1,22 +1,46 @@
 ---
 title: Welcome
-description: Lumen is an iOS browser that reads along with you.
+description: Lumen is an iPhone browser with a private library of what you read, and a small model on the phone to answer questions about it.
 ---
 
-Lumen is an iOS browser that reads along with you. Every page you engage with becomes part of a private knowledge base you can ask questions about. There is no cloud, no account, no server. Just the phone in your hand.
+Lumen is a web browser for iPhone. As you read, it saves the pages you spend time on into a library on your phone, sorted by topic and by website, and a small language model running on the device answers questions from what you saved. Nothing you save or ask goes to a server, and there is no account to create.
 
-This document covers how Lumen works in detail, how to build it from source, and how to think about contributing. It is ordered so that you can read it straight through and come away with a complete mental model, or jump to a section from the sidebar when you have a specific question.
+These pages cover getting the app, what happens the first time you open it, how the library and Ask work, what the app sends over the network, and how the code fits together. Start with whichever one matches your question, or read them in the order of the sidebar.
 
-## Philosophy
-
-The web remembers for you until it doesn&rsquo;t. Browsers forget history on a schedule, bookmarks go stale, and cloud notes get scattered across apps. Lumen keeps a quiet, local record of what you actually read so you can ask it back later. The record never leaves the device.
-
-Our position is that a browser should be the memory of your reading, not the distribution channel for it. That position determines almost every other design choice: the model runs locally, the database stays sandboxed, the site menu is honest about what was scrubbed, and there is nothing to sign in to.
-
-## Next steps
-
-- [Installation](/installation) if you want to install Lumen on a device.
-- [Knowledge panel](/knowledge) for how Ask and Library work.
-- [Privacy](/privacy) for the on-device guarantees.
-- [Architecture](/architecture) for the technical shape of the app.
-- [Contributing](/contributing) if you want to work on the code.
+<Cards>
+  <Card
+    title="Installation"
+    href="/installation"
+    description="Get Lumen from the App Store, or build it from source in Xcode."
+  />
+  <Card
+    title="First run"
+    href="/first-run"
+    description="What you see when you first open the app, and when the model downloads."
+  />
+  <Card
+    title="Knowledge panel"
+    href="/knowledge"
+    description="How Ask answers from your library, and how the library is organized."
+  />
+  <Card
+    title="Privacy"
+    href="/privacy"
+    description="What leaves the phone, and what stays on it."
+  />
+  <Card
+    title="Architecture"
+    href="/architecture"
+    description="How the browser, the database, and the model fit together."
+  />
+  <Card
+    title="Contributing"
+    href="/contributing"
+    description="The checks a change has to pass, and how to send one."
+  />
+  <Card
+    title="Support"
+    href="/support"
+    description="Where to report a problem or ask for help."
+  />
+</Cards>

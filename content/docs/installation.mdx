@@ -1,24 +1,63 @@
 ---
 title: Installation
-description: Requirements and how to install Lumen on your device.
+description: Install Lumen from the App Store, or build it yourself from the source in Xcode.
 ---
 
-## Requirements
+Lumen is an iPhone app, and it needs iOS 18 or later. You can install it from the App Store or build it yourself from the source code.
 
-- iPhone running iOS `18` or newer.
-- Roughly `1.2 GB` of free storage for the local model weights.
-- A Wi-Fi connection for the first run only. Inference runs offline afterwards.
+## From the App Store
 
-Lumen does not ask for an Apple ID, email, or phone number. There is no onboarding to click through and nothing to sign in to.
+The simplest route is the [Lumen listing on the App Store](https://apps.apple.com/app/id6762682475). Installing it from there needs no developer account, and updates arrive the same way they do for any other app. Outside the App Store, the only way to get Lumen is to build it yourself.
 
-## Install
+Either way, the app downloads its language model later, the first time it needs the model, and that download needs about 1.2 GB of free space. [First run](/first-run) explains when it happens.
 
-Download the most recent `.ipa` from the [Releases](https://github.com/Lux-Softworks/Lumen/releases) page on GitHub and install it through TestFlight or your preferred sideloading tool. An App Store build is on the roadmap; until it lands, GitHub is the canonical channel.
+## Build from source
 
-If you prefer to build from source, see the [Contributing](/contributing) page.
+Building Lumen needs three things:
 
-<Callout type="info">
-  You can browse without the model. The Ask panel will be inert until the
-  download completes, but the reader, library, and privacy features all work
-  immediately.
+- A Mac with Xcode 26.2 or later.
+- An Apple developer account, which Xcode uses to sign the app.
+- An iPhone on iOS 18 or later, or an iOS 18 simulator.
+
+<Callout type="warn">
+  The language model does not run in the simulator. Pages still save to the
+  library there, but without summaries, and Ask replies with fixed placeholder
+  text in place of a real answer. Test anything involving summaries or answers
+  on a physical iPhone.
 </Callout>
+
+<Steps>
+<Step>
+
+### Clone the repository
+
+```bash
+git clone https://github.com/Lux-Softworks/Lumen.git
+cd Lumen
+```
+
+</Step>
+<Step>
+
+### Open the project
+
+Open `Lumen.xcodeproj` in Xcode, or run `open Lumen.xcodeproj` from the same folder. On the first open, Xcode fetches the four Swift packages the project depends on: mlx-swift, mlx-swift-lm, swift-readability, and SwiftSoup.
+
+</Step>
+<Step>
+
+### Sign it with your own team
+
+The project arrives set to the original developer's team (`XF6K537DNY`), which your account cannot sign with. Signing is set in a file rather than in Xcode&rsquo;s **Signing & Capabilities** tab. In the `Configuration` folder, copy `Signing.local.example.xcconfig` to `Signing.local.xcconfig`, then open the copy and set `DEVELOPMENT_TEAM` to your own team ID and `LUMEN_BUNDLE_ID_PREFIX` to a prefix of your own, such as `com.yourname`. Your team ID is listed under **Membership details** in your Apple Developer account. The app and both test targets read this file, and Git ignores it, keeping your team out of the repository.
+
+</Step>
+<Step>
+
+### Run it
+
+Pick an iPhone or a simulator on iOS 18 or later as the destination, and press **⌘R**. On a physical iPhone, the first launch may be blocked until you trust your developer profile under **Settings → General → VPN & Device Management**.
+
+</Step>
+</Steps>
+
+To run the tests, press **⌘U**. [Contributing](/contributing) covers the lint check every change has to pass and how to send a pull request.

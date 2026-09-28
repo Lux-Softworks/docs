@@ -5,13 +5,64 @@
 
 @theme {
   --color-ink: #141414;
+  --color-ink-raised: #1e1e1e;
+  --color-ink-surface: #262626;
+  --color-ink-line: #2b2b2b;
+  --color-ink-line-strong: #3a3a3a;
+
   --color-parchment: #e8e4dc;
+  --color-parchment-dim: #a8a499;
+  --color-parchment-faint: #7a766a;
+
   --color-amber: #ff9f0a;
+  --color-amber-soft: #ffc46a;
+  --color-ochre: #e68700;
 
   --color-linen: #f2f0eb;
+  --color-linen-surface: #e8e4dc;
   --color-linen-ink: #1e1e1e;
+  --color-linen-ink-soft: #4a4640;
 
-  --font-grotesk: "Inter Tight", system-ui, sans-serif;
+  --font-grotesk: var(--font-inter-tight), "Inter Tight", system-ui, sans-serif;
+  --font-sans: var(--font-geist), "Inter", system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+
+  --color-fd-background: var(--color-linen);
+  --color-fd-foreground: var(--color-linen-ink);
+  --color-fd-muted: var(--color-linen-surface);
+  --color-fd-muted-foreground: var(--color-linen-ink-soft);
+  --color-fd-popover: var(--color-linen);
+  --color-fd-popover-foreground: var(--color-linen-ink);
+  --color-fd-card: var(--color-linen-surface);
+  --color-fd-card-foreground: var(--color-linen-ink);
+  --color-fd-border: rgb(30 30 30 / 0.12);
+  --color-fd-primary: var(--color-linen-ink);
+  --color-fd-primary-foreground: var(--color-linen);
+  --color-fd-secondary: var(--color-linen-surface);
+  --color-fd-secondary-foreground: var(--color-linen-ink);
+  --color-fd-accent: rgb(30 30 30 / 0.06);
+  --color-fd-accent-foreground: var(--color-linen-ink);
+  --color-fd-ring: var(--color-ochre);
+}
+
+.dark,
+.dark #nd-sidebar {
+  --color-fd-background: var(--color-ink);
+  --color-fd-foreground: var(--color-parchment);
+  --color-fd-muted: var(--color-ink-raised);
+  --color-fd-muted-foreground: var(--color-parchment-dim);
+  --color-fd-popover: var(--color-ink-raised);
+  --color-fd-popover-foreground: var(--color-parchment);
+  --color-fd-card: var(--color-ink-raised);
+  --color-fd-card-foreground: var(--color-parchment);
+  --color-fd-border: var(--color-ink-line);
+  --color-fd-primary: var(--color-amber);
+  --color-fd-primary-foreground: var(--color-ink);
+  --color-fd-secondary: var(--color-ink-surface);
+  --color-fd-secondary-foreground: var(--color-parchment);
+  --color-fd-accent: var(--color-ink-surface);
+  --color-fd-accent-foreground: var(--color-parchment);
+  --color-fd-ring: var(--color-amber);
 }
 
 :root {
@@ -30,7 +81,45 @@ html,
 body {
   background: var(--bg);
   color: var(--fg);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--color-amber);
+  color: var(--color-ink);
+}
+
+h1,
+.prose :is(h2, h3, h4) {
+  font-family: var(--font-grotesk);
+  letter-spacing: -0.02em;
+}
+
+.prose :is(h2, h3) {
+  font-weight: 700;
+}
+
+.prose a:not([data-card]) {
+  text-decoration-color: var(--color-amber);
+  text-underline-offset: 3px;
+}
+
+.fd-step::before {
+  font-family: var(--font-mono);
+  background-color: var(--color-fd-background);
+  border: 1px solid var(--color-fd-border);
+  color: var(--color-fd-foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
